@@ -168,11 +168,4 @@ Found a bug or have a feature request? Please open an issue or submit a pull req
 
 ## 📄 License
 
-This project is open source and available under the Beerware License.
-
-```
-"THE BEER-WARE LICENSE" (Revision 42):
-<tktks@example.com> wrote this file. As long as you retain this notice you
-can do whatever you want with this stuff. If we meet some day, and you think
-this stuff is worth it, you can buy me a beer in return. tktks
-```
+This project is licensed under the Beerware License - see the [LICENSE](LICENSE) file for details.
