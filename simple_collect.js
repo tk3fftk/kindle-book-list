@@ -3,8 +3,8 @@
 // Helper function to sanitize text for CSV export
 function sanitizeForCSV(text) {
   return text
-    .replace(/,/g, "，")     // Replace commas with full-width commas
-    .replace(/"/g, '\\"');   // Escape double quotes with backslash
+    .replace(/,/g, "，") // Replace commas with full-width commas
+    .replace(/"/g, '\\"'); // Escape double quotes with backslash
 }
 
 // Initialize the collector (run once)
@@ -14,25 +14,27 @@ window.initializeKindleCollector = function () {
   // Collect books from current page
   window.collectBooks = function () {
     const books = [];
-    document.querySelectorAll("table tr.ListItem-module_row__3orql").forEach((row) => {
-      // Extract title from the heading element
-      const titleElement = row.querySelector(
-        'div[role="heading"][aria-level="4"]'
-      );
-      const title = titleElement ? titleElement.textContent.trim() : "";
+    document
+      .querySelectorAll("table tr.ListItem-module_row__3orql")
+      .forEach((row) => {
+        // Extract title from the heading element
+        const titleElement = row.querySelector(
+          'div[role="heading"][aria-level="4"]'
+        );
+        const title = titleElement ? titleElement.textContent.trim() : "";
 
-      // Extract author using the content-author ID pattern
-      const authorElement = row.querySelector('div[id^="content-author-"]');
-      const author = authorElement ? authorElement.textContent.trim() : "";
+        // Extract author using the content-author ID pattern
+        const authorElement = row.querySelector('div[id^="content-author-"]');
+        const author = authorElement ? authorElement.textContent.trim() : "";
 
-      if (title) {
-        books.push({
-          title: sanitizeForCSV(title),
-          author: sanitizeForCSV(author),
-        });
-        console.log(`📖 ${title} by ${author}`);
-      }
-    });
+        if (title) {
+          books.push({
+            title: sanitizeForCSV(title),
+            author: sanitizeForCSV(author),
+          });
+          console.log(`📖 ${title} by ${author}`);
+        }
+      });
 
     window.kb.push(...books);
     console.log(
@@ -42,19 +44,30 @@ window.initializeKindleCollector = function () {
   };
 
   // Page navigation helpers
-  window.nextPage = function () {
+  window.findNextPageButton = function () {
     // Find current active page
     const activePage = document.querySelector(".page-item.active");
     let nextButton = null;
+    let currentPageNum = null;
+    let nextPageNum = null;
 
     if (activePage) {
       // Get current page number from ID (e.g., "page-2" -> 2)
-      const currentPageNum = parseInt(activePage.id.replace("page-", ""));
-      const nextPageNum = currentPageNum + 1;
+      currentPageNum = parseInt(activePage.id.replace("page-", ""));
+      nextPageNum = currentPageNum + 1;
 
       // Try to find next numbered page
       nextButton = document.querySelector(`#page-${nextPageNum}`);
+    }
 
+    return { nextButton, currentPageNum, nextPageNum };
+  };
+
+  window.nextPage = function () {
+    const { nextButton, currentPageNum, nextPageNum } =
+      window.findNextPageButton();
+
+    if (currentPageNum && nextPageNum) {
       console.log(
         `🔄 Moving from page ${currentPageNum} to page ${nextPageNum}...`
       );
@@ -78,17 +91,7 @@ window.initializeKindleCollector = function () {
         const count = window.collectBooks();
         if (count > 0) {
           setTimeout(() => {
-            // Use the same logic as nextPage() for consistency
-            const activePage = document.querySelector(".page-item.active");
-            let nextButton = null;
-
-            if (activePage) {
-              const currentPageNum = parseInt(
-                activePage.id.replace("page-", "")
-              );
-              const nextPageNum = currentPageNum + 1;
-              nextButton = document.querySelector(`#page-${nextPageNum}`);
-            }
+            const { nextButton } = window.findNextPageButton();
 
             if (nextButton) {
               nextButton.click();
@@ -147,9 +150,6 @@ window.initializeKindleCollector = function () {
 if (!window.kb) {
   window.initializeKindleCollector();
 }
-
-// Collect from current page
-const collected = window.collectBooks();
 
 // CSV Export Functions
 window.toCSV = function () {
