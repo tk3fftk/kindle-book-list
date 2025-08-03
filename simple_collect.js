@@ -63,20 +63,9 @@ window.initializeKindleCollector = function () {
     }
   };
 
-  window.getCurrentPageInfo = function () {
-    const pageElements = document.querySelectorAll("span");
-    const pageInfo =
-      Array.from(pageElements).find(
-        (el) =>
-          el.textContent.includes("ページ") || el.textContent.includes("件")
-      )?.textContent || "Page info not found";
-    console.log(`📄 ${pageInfo}`);
-    return pageInfo;
-  };
 
   window.collectAllPages = function () {
     console.log("🚀 Starting automated collection...");
-    window.getCurrentPageInfo();
 
     function collectAndNavigate() {
       setTimeout(() => {
@@ -129,7 +118,6 @@ window.initializeKindleCollector = function () {
 
     console.log("\n🧭 Navigation Commands:");
     console.log("➡️ nextPage()           - Navigate to next page");
-    console.log("📄 getCurrentPageInfo() - Show current page info");
 
     console.log("\n💾 Export Commands:");
     console.log("💾 downloadCSV()        - Download CSV file");
