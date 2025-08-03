@@ -86,7 +86,7 @@ window.initializeKindleCollector = function () {
             if (nextButton) {
               nextButton.click();
               console.log("🔄 Auto-navigating to next page...");
-              setTimeout(collectAndNavigate, 5000); // Wait 2 seconds for page load
+              setTimeout(collectAndNavigate, 5000); // Wait 5 seconds for page load
             } else {
               window.showResults();
             }
