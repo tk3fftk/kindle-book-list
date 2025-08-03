@@ -1,15 +1,17 @@
 // Kindle Book Collector - Multi-page friendly script
 
 // Initialize the collector (run once)
-window.initializeKindleCollector = function() {
+window.initializeKindleCollector = function () {
   if (!window.kb) window.kb = [];
-  
+
   // Collect books from current page
-  window.collectBooks = function() {
+  window.collectBooks = function () {
     const books = [];
     $$("table tr.ListItem-module_row__3orql").forEach((row) => {
       // Extract title from the heading element
-      const titleElement = row.querySelector('div[role="heading"][aria-level="4"]');
+      const titleElement = row.querySelector(
+        'div[role="heading"][aria-level="4"]'
+      );
       const title = titleElement ? titleElement.textContent.trim() : "";
 
       // Extract author using the content-author ID pattern
@@ -26,17 +28,31 @@ window.initializeKindleCollector = function() {
     });
 
     window.kb.push(...books);
-    console.log(`✅ Added ${books.length} books from this page. Total: ${window.kb.length}`);
+    console.log(
+      `✅ Added ${books.length} books from this page. Total: ${window.kb.length}`
+    );
     return books.length;
   };
 
   // Page navigation helpers
-  window.nextPage = function() {
-    const nextButton = document.querySelector('a[aria-label*="次"]') || 
-                      document.querySelector('a[href*="startIndex"]') ||
-                      Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('次'));
-    
+  window.nextPage = function () {
+    // Find current active page
+    const activePage = document.querySelector(".page-item.active");
+    let nextButton = null;
+
+    if (activePage) {
+      // Get current page number from ID (e.g., "page-2" -> 2)
+      const currentPageNum = parseInt(activePage.id.replace("page-", ""));
+      const nextPageNum = currentPageNum + 1;
+
+      // Try to find next numbered page
+      nextButton = document.querySelector(`#page-${nextPageNum}`);
+    }
+
     if (nextButton) {
+      console.log(
+        `🔄 Moving from page ${currentPageNum} to page ${nextPageNum}...`
+      );
       nextButton.click();
       console.log("🔄 Navigating to next page...");
       console.log("💡 Wait for page to load, then run: collectBooks()");
@@ -46,27 +62,44 @@ window.initializeKindleCollector = function() {
     }
   };
 
-  window.getCurrentPageInfo = function() {
-    const pageElements = document.querySelectorAll('span');
-    const pageInfo = Array.from(pageElements).find(el => 
-      el.textContent.includes('ページ') || el.textContent.includes('件')
-    )?.textContent || "Page info not found";
+  window.getCurrentPageInfo = function () {
+    const pageElements = document.querySelectorAll("span");
+    const pageInfo =
+      Array.from(pageElements).find(
+        (el) =>
+          el.textContent.includes("ページ") || el.textContent.includes("件")
+      )?.textContent || "Page info not found";
     console.log(`📄 ${pageInfo}`);
     return pageInfo;
   };
 
-  window.collectAllPages = function() {
+  window.collectAllPages = function () {
     console.log("🚀 Starting automated collection...");
     window.getCurrentPageInfo();
-    
+
     function collectAndNavigate() {
       setTimeout(() => {
         const count = window.collectBooks();
         if (count > 0) {
           setTimeout(() => {
-            const nextButton = document.querySelector('a[aria-label*="次"]') || 
-                              document.querySelector('a[href*="startIndex"]') ||
-                              Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('次'));
+            // Use the same logic as nextPage() for consistency
+            const activePage = document.querySelector(".page-item.active");
+            let nextButton = null;
+
+            if (activePage) {
+              const currentPageNum = parseInt(
+                activePage.id.replace("page-", "")
+              );
+              const nextPageNum = currentPageNum + 1;
+              nextButton = document.querySelector(`#page-${nextPageNum}`);
+            }
+
+            if (!nextButton) {
+              nextButton =
+                document.querySelector("#page-RIGHT_PAGE") ||
+                document.querySelector('a[aria-label="Next"]');
+            }
+
             if (nextButton) {
               nextButton.click();
               console.log("🔄 Auto-navigating to next page...");
@@ -80,15 +113,15 @@ window.initializeKindleCollector = function() {
         }
       }, 1000);
     }
-    
+
     collectAndNavigate();
   };
 
-  window.showResults = function() {
-    console.log('\n' + '🎉'.repeat(20));
+  window.showResults = function () {
+    console.log("\n" + "🎉".repeat(20));
     console.log(`📚 Collection complete! Total books: ${window.kb.length}`);
     window.exportBooks();
-    console.log('🎉'.repeat(20));
+    console.log("🎉".repeat(20));
   };
 
   console.log("🚀 Kindle Collector initialized!");
@@ -111,38 +144,40 @@ if (!window.kb) {
 const collected = window.collectBooks();
 
 // CSV Export Functions
-window.toCSV = function() {
+window.toCSV = function () {
   const header = "Title,Author\n";
-  const rows = window.kb.map(book => `"${book.title}","${book.author}"`).join('\n');
+  const rows = window.kb
+    .map((book) => `"${book.title}","${book.author}"`)
+    .join("\n");
   return header + rows;
 };
 
-window.downloadCSV = function() {
+window.downloadCSV = function () {
   const csv = window.toCSV();
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const timestamp = new Date().toISOString().split('T')[0];
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const timestamp = new Date().toISOString().split("T")[0];
   link.download = `kindle_books_${timestamp}.csv`;
   link.href = URL.createObjectURL(blob);
   link.click();
   console.log(`📁 Downloaded CSV file: kindle_books_${timestamp}.csv`);
 };
 
-window.copyCSV = function() {
+window.copyCSV = function () {
   const csv = window.toCSV();
   copy(csv);
   console.log(`📋 CSV data copied to clipboard! (${window.kb.length} books)`);
 };
 
-window.exportBooks = function() {
+window.exportBooks = function () {
   console.log(`📚 ${window.kb.length} books collected. Export options:`);
-  console.log('💾 Download file: downloadCSV()');
-  console.log('📋 Copy to clipboard: copyCSV()');
+  console.log("💾 Download file: downloadCSV()");
+  console.log("📋 Copy to clipboard: copyCSV()");
 };
 
 // Show export options
 if (window.kb.length > 0) {
-  console.log('\n' + '='.repeat(50));
+  console.log("\n" + "=".repeat(50));
   window.exportBooks();
-  console.log('='.repeat(50));
+  console.log("=".repeat(50));
 }
