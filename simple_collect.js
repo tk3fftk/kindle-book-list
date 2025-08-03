@@ -31,6 +31,7 @@ window.initializeKindleCollector = function () {
           books.push({
             title: sanitizeForCSV(title),
             author: sanitizeForCSV(author),
+            format: "Kindle",
           });
           console.log(`📖 ${title} by ${author}`);
         }
@@ -153,9 +154,9 @@ if (!window.kb) {
 
 // CSV Export Functions
 window.toCSV = function () {
-  const header = "Title,Author\n";
+  const header = "Title,Author,Format\n";
   const rows = window.kb
-    .map((book) => `"${book.title}","${book.author}"`)
+    .map((book) => `"${book.title}","${book.author}","${book.format}"`)
     .join("\n");
   return header + rows;
 };
