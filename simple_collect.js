@@ -7,7 +7,7 @@ window.initializeKindleCollector = function () {
   // Collect books from current page
   window.collectBooks = function () {
     const books = [];
-    $$("table tr.ListItem-module_row__3orql").forEach((row) => {
+    document.querySelectorAll("table tr.ListItem-module_row__3orql").forEach((row) => {
       // Extract title from the heading element
       const titleElement = row.querySelector(
         'div[role="heading"][aria-level="4"]'
@@ -62,7 +62,6 @@ window.initializeKindleCollector = function () {
       window.showResults();
     }
   };
-
 
   window.collectAllPages = function () {
     console.log("🚀 Starting automated collection...");
@@ -171,12 +170,12 @@ window.copyCSV = function () {
   console.log(`📋 CSV data copied to clipboard! (${window.kb.length} books)`);
 };
 
-
 // Show export options
 if (window.kb.length > 0) {
   console.log("\n" + "=".repeat(50));
   console.log(`📚 ${window.kb.length} books collected. Export options:`);
   console.log("💾 Download file: downloadCSV()");
   console.log("📋 Copy to clipboard: copyCSV()");
+  console.log("➡️ Navigate to next page: nextPage()");
   console.log("=".repeat(50));
 }
