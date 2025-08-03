@@ -47,12 +47,13 @@ window.initializeKindleCollector = function () {
 
       // Try to find next numbered page
       nextButton = document.querySelector(`#page-${nextPageNum}`);
-    }
 
-    if (nextButton) {
       console.log(
         `🔄 Moving from page ${currentPageNum} to page ${nextPageNum}...`
       );
+    }
+
+    if (nextButton) {
       nextButton.click();
       console.log("🔄 Navigating to next page...");
       console.log("💡 Wait for page to load, then run: collectBooks()");
@@ -94,16 +95,10 @@ window.initializeKindleCollector = function () {
               nextButton = document.querySelector(`#page-${nextPageNum}`);
             }
 
-            if (!nextButton) {
-              nextButton =
-                document.querySelector("#page-RIGHT_PAGE") ||
-                document.querySelector('a[aria-label="Next"]');
-            }
-
             if (nextButton) {
               nextButton.click();
               console.log("🔄 Auto-navigating to next page...");
-              setTimeout(collectAndNavigate, 2000); // Wait 2 seconds for page load
+              setTimeout(collectAndNavigate, 5000); // Wait 2 seconds for page load
             } else {
               window.showResults();
             }
@@ -120,19 +115,38 @@ window.initializeKindleCollector = function () {
   window.showResults = function () {
     console.log("\n" + "🎉".repeat(20));
     console.log(`📚 Collection complete! Total books: ${window.kb.length}`);
-    window.exportBooks();
+    console.log("💾 Use downloadCSV() or copyCSV() to export data");
     console.log("🎉".repeat(20));
   };
 
+  // Help function to show all available commands
+  window.help = function () {
+    console.log("🚀 Kindle Book Collector - Available Commands:");
+    console.log("\n📚 Collection Commands:");
+    console.log("📖 collectBooks()       - Collect books from current page");
+    console.log("🤖 collectAllPages()    - Auto-collect from all pages");
+    console.log("📊 showResults()        - Show collection summary");
+
+    console.log("\n🧭 Navigation Commands:");
+    console.log("➡️ nextPage()           - Navigate to next page");
+    console.log("📄 getCurrentPageInfo() - Show current page info");
+
+    console.log("\n💾 Export Commands:");
+    console.log("💾 downloadCSV()        - Download CSV file");
+    console.log("📋 copyCSV()            - Copy CSV to clipboard");
+    console.log("📄 toCSV()              - Get CSV data as string");
+
+    console.log("\n🔧 Utility Commands:");
+    console.log("❓ help()               - Show this help message");
+    console.log("🔄 initializeKindleCollector() - Re-initialize if needed");
+
+    console.log(
+      `\n📊 Current Status: ${window.kb ? window.kb.length : 0} books collected`
+    );
+  };
+
   console.log("🚀 Kindle Collector initialized!");
-  console.log("\n📋 Available Commands:");
-  console.log("📖 collectBooks()     - Collect books from current page");
-  console.log("➡️ nextPage()        - Navigate to next page");
-  console.log("🤖 collectAllPages() - Auto-collect from all pages");
-  console.log("📄 getCurrentPageInfo() - Show current page info");
-  console.log("📊 showResults()     - Show collection summary");
-  console.log("💾 downloadCSV()     - Download CSV file");
-  console.log("📋 copyCSV()         - Copy CSV to clipboard");
+  window.help();
 };
 
 // Initialize and collect from first page
@@ -169,15 +183,12 @@ window.copyCSV = function () {
   console.log(`📋 CSV data copied to clipboard! (${window.kb.length} books)`);
 };
 
-window.exportBooks = function () {
-  console.log(`📚 ${window.kb.length} books collected. Export options:`);
-  console.log("💾 Download file: downloadCSV()");
-  console.log("📋 Copy to clipboard: copyCSV()");
-};
 
 // Show export options
 if (window.kb.length > 0) {
   console.log("\n" + "=".repeat(50));
-  window.exportBooks();
+  console.log(`📚 ${window.kb.length} books collected. Export options:`);
+  console.log("💾 Download file: downloadCSV()");
+  console.log("📋 Copy to clipboard: copyCSV()");
   console.log("=".repeat(50));
 }
