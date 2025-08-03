@@ -33,7 +33,7 @@ Amazon Kindleライブラリから本のタイトルと著者を自動収集・�
    - **Safari**: `Cmd+Option+I`（最初に開発者メニューを有効にする必要があります）
 
 3. **スクリプトをコピー&ペースト**:
-   `simple_collect.js`の全内容をコピーしてコンソールに貼り付け、Enterキーを押します。
+   `kindle_collect.js`の全内容をコピーしてコンソールに貼り付け、Enterキーを押します。
 
 4. **収集開始**:
    ```javascript

@@ -33,7 +33,7 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
    - **Safari**: Press `Cmd+Option+I` (enable Developer menu first)
 
 3. **Copy and paste the script**:
-   Copy the entire contents of `simple_collect.js` and paste into the console, then press Enter.
+   Copy the entire contents of `kindle_collect.js` and paste into the console, then press Enter.
 
 4. **Start collecting**:
    ```javascript
