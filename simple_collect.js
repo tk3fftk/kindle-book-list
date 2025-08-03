@@ -171,10 +171,16 @@ window.downloadCSV = function () {
   console.log(`📁 Downloaded CSV file: kindle_books_${timestamp}.csv`);
 };
 
-window.copyCSV = function () {
+window.copyCSV = async function () {
   const csv = window.toCSV();
-  copy(csv);
-  console.log(`📋 CSV data copied to clipboard! (${window.kb.length} books)`);
+  try {
+    await navigator.clipboard.writeText(csv);
+    console.log(`📋 CSV data copied to clipboard! (${window.kb.length} books)`);
+  } catch (err) {
+    console.log(`❌ Failed to copy to clipboard: ${err.message}`);
+    console.log(`💡 Manual copy: Select and copy the CSV data below:`);
+    console.log(csv);
+  }
 };
 
 // Show export options
