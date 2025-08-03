@@ -1,5 +1,12 @@
 // Kindle Book Collector - Multi-page friendly script
 
+// Helper function to sanitize text for CSV export
+function sanitizeForCSV(text) {
+  return text
+    .replace(/,/g, "，")     // Replace commas with full-width commas
+    .replace(/"/g, '\\"');   // Escape double quotes with backslash
+}
+
 // Initialize the collector (run once)
 window.initializeKindleCollector = function () {
   if (!window.kb) window.kb = [];
@@ -20,8 +27,8 @@ window.initializeKindleCollector = function () {
 
       if (title) {
         books.push({
-          title: title.replace(/,/g, "，"),
-          author: author.replace(/,/g, "，"),
+          title: sanitizeForCSV(title),
+          author: sanitizeForCSV(author),
         });
         console.log(`📖 ${title} by ${author}`);
       }
