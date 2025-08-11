@@ -381,6 +381,26 @@ window.sequelPatterns = {
       return null;
     },
   },
+
+  // Pattern 8: Prefix collection format (1集 Title, 2集 Title)
+  prefixCollection: {
+    regex: /^([０-９\d一二三四五六七八九十]+)集\s+(.+)$/,
+    extract: function (title) {
+      const match = title.match(this.regex);
+      if (match) {
+        const volumeInfo = window.convertToHalfWidthNumber(match[1]);
+
+        return {
+          baseTitle: match[2].trim(),
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
+          suffix: "",
+          type: "prefixCollection",
+        };
+      }
+      return null;
+    },
+  },
 };
 
 // Function to detect and extract sequel information from a title
@@ -512,6 +532,8 @@ window.formatVolumeRange = function (volumes, type) {
         return `【第${min}-${max}話】`;
       case "collection":
         return `第${min}-${max}集`;
+      case "prefixCollection":
+        return `(${min}-${max})集`;
       case "volumeKan":
         return `(${min}-${max})巻`;
       case "spaceNumber":
@@ -531,6 +553,8 @@ window.formatVolumeRange = function (volumes, type) {
         return `【第${volumeTexts}話】`;
       case "collection":
         return `第${volumeTexts}集`;
+      case "prefixCollection":
+        return `(${volumeTexts})集`;
       case "volumeKan":
         return `(${volumeTexts})巻`;
       case "spaceNumber":
@@ -757,6 +781,5 @@ ${"=".repeat(50)}
 📋 Copy to clipboard: copyCSV()
 ➡️ Navigate to next page: nextPage()
 🔗 Merge sequels: mergeSequels()
-🧪 Test sequel fix: testSequelFix()
 ${"=".repeat(50)}`);
 }
