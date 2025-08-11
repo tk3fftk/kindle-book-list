@@ -8,12 +8,14 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
 
 - **📖 Smart Book Collection**: Automatically extracts book titles and authors from Kindle library pages
 - **🤖 Multi-Page Automation**: Seamlessly navigates through all pages of your library
-- **🔗 Sequel Series Merging**: Automatically merges sequel series (e.g., `Volume(1)`, `Volume(2)` → `Volume(1-2)`)
-- **🌏 Full-Width Character Support**: Handles both ASCII and full-width digits/brackets
+- **🔗 Advanced Sequel Series Merging**: Automatically merges sequel series with 8 distinct pattern recognition algorithms
+- **🎭 Mixed Pattern Recognition**: Handles series using multiple numbering formats simultaneously (e.g., parenthetical + trailing numbers)
+- **👤 Author Normalization**: Smart grouping handles author variants (e.g., `"Author， Co-Author"` → `"Author"`)
+- **🌏 Full-Width Character Support**: Handles both ASCII and full-width digits/brackets seamlessly
 - **💾 Multiple Export Options**: Download CSV files or copy data to clipboard for both original and merged data
-- **🔄 Real-Time Progress**: Live console feedback with collection status and progress
+- **🔄 Real-Time Progress**: Live console feedback with collection status and mixed pattern detection
 - **🎯 Robust Selectors**: Uses reliable DOM selectors that work with current Kindle library interface
-- **⚡ Browser Console Interface**: Simple commands for easy operation
+- **⚡ Browser Console Interface**: Simple commands for easy operation with built-in testing functions
 
 ## 🚀 Quick Start
 
@@ -91,6 +93,7 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
 |---------|-------------|
 | `help()` | Show all available commands |
 | `initializeKindleCollector()` | Re-initialize the collector if needed |
+| `testPrefixCollection()` | Test prefix collection pattern (e.g., `1集 Title` format) |
 
 ## 💾 Export Options
 
@@ -104,7 +107,7 @@ The exported data includes:
 
 ### Sequel Merging
 
-The tool automatically detects and merges sequel series:
+The tool automatically detects and merges sequel series using **8 distinct pattern recognition algorithms**:
 
 **Supported Patterns:**
 - **Numbered volumes**: `Title(1)`, `Title(2)` → `Title(1-2)` or `Title(1,3,5)` for non-consecutive
@@ -112,9 +115,14 @@ The tool automatically detects and merges sequel series:
 - **Volume format**: `Title9巻`, `Title13巻` → `Title(9,13)巻`
 - **Chapter format**: `Title【第1話】`, `Title【第2話】` → `Title【第1-2話】`
 - **Collection format**: `Title第一集`, `Title第二集` → `Title第1-2集`
+- **Prefix collection**: `1集 Title`, `2集 Title` → `Title(1-2)集` *(NEW: volumes at beginning)*
 - **Upper/Lower**: `Title上`, `Title下` → `Title(上・下)`
 - **Space + number**: `Title1`, `Title 2`, `Title　3` → `Title(1-3)` for titles with space-separated numbers
 - **Title ending number**: `Title1`, `Title2`, `Title3` → `Title(1-3)` for titles ending with numbers
+
+**🎭 Mixed Pattern Support:**
+- Series can use **multiple numbering formats** (e.g., `Title(2,3,4)` + `Title１１` → `Title(2,3,4,11)`)
+- Author variants are automatically normalized for better grouping
 
 ### Export Methods
 
@@ -158,8 +166,8 @@ The script uses DOM selectors to identify book entries on Kindle library pages:
 1. **Initialize**: Script automatically initializes when pasted
 2. **Collect**: Gathers books from current page
    ```
-   📖 The Great Gatsby by F. Scott Fitzgerald
-   📖 To Kill a Mockingbird by Harper Lee
+   📖 Book Title 1 by Author A
+   📖 Book Title 2 by Author B
    ✅ Added 25 books from this page. Total: 25
    ```
 3. **Navigate**: Automatically moves to next page
@@ -178,10 +186,16 @@ The script uses DOM selectors to identify book entries on Kindle library pages:
 5. **Optional**: Merge sequel series
    ```
    🔄 Merging sequels from 347 books...
-   📚 Merged: プランダラ (21 volumes) -> プランダラ(1-21)
+   🔗 Mixed patterns detected for "Series C" by Author A: numberedVolumes, titleEndingNumber
+   📚 Merged: Series A (21 volumes) -> Series A(1-21)
+   📚 Merged: Series B (9 volumes) -> Series B(1-9)集
+   📚 Merged: Series C (14 volumes) [Mixed: numberedVolumes,titleEndingNumber] -> Series C(2-13)
    ✅ Merge complete!
    📊 Original: 347 books
    📊 Merged: 298 entries
+   📊 Series merged: 52
+   📊 Standalone books: 246
+   🔗 Mixed pattern series: 3
    💾 Use downloadMergedCSV() to download merged CSV
    ```
 
