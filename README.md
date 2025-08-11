@@ -113,6 +113,8 @@ The tool automatically detects and merges sequel series:
 - **Chapter format**: `Title【第1話】`, `Title【第2話】` → `Title【第1-2話】`
 - **Collection format**: `Title第一集`, `Title第二集` → `Title第1-2集`
 - **Upper/Lower**: `Title上`, `Title下` → `Title(上・下)`
+- **Space + number**: `Title1`, `Title 2`, `Title　3` → `Title(1-3)` for titles with space-separated numbers
+- **Title ending number**: `Title1`, `Title2`, `Title3` → `Title(1-3)` for titles ending with numbers
 
 ### Export Methods
 

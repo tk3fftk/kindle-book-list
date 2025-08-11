@@ -175,6 +175,53 @@ window.testSequelMerging = function () {
       author: "青樹佑夜， 綾峰欄人",
       format: "Kindle",
     },
+    // Test cases for space + number pattern
+    {
+      title: "大日本帝国の銀河１ (ハヤカワ文庫JA)",
+      author: "林 譲治",
+      format: "Kindle",
+    },
+    {
+      title: "大日本帝国の銀河 ４ (ハヤカワ文庫JA)",
+      author: "林 譲治",
+      format: "Kindle",
+    },
+    {
+      title: "大日本帝国の銀河 ３ (ハヤカワ文庫JA)",
+      author: "林 譲治",
+      format: "Kindle",
+    },
+    {
+      title: "大日本帝国の銀河　２ (ハヤカワ文庫JA)",
+      author: "林 譲治",
+      format: "Kindle",
+    },
+    {
+      title: "大日本帝国の銀河　５ (ハヤカワ文庫JA)",
+      author: "林 譲治",
+      format: "Kindle",
+    },
+    // Test cases for title ending number pattern
+    {
+      title: "あの頃の青い星4",
+      author: "蟹",
+      format: "Kindle",
+    },
+    {
+      title: "あの頃の青い星3",
+      author: "蟹",
+      format: "Kindle",
+    },
+    {
+      title: "あの頃の青い星2",
+      author: "蟹",
+      format: "Kindle",
+    },
+    {
+      title: "あの頃の青い星1",
+      author: "蟹",
+      format: "Kindle",
+    },
   ];
 
   // Backup current data if it exists
@@ -203,9 +250,11 @@ window.testSequelMerging = function () {
     "  - マテリアル・パズル～神無き世界の魔法使い～（9,10） (full-width)"
   );
   console.log("  - テスト巻（12,13） (full-width brackets)");
+  console.log("  - 大日本帝国の銀河(1-5) (space+number pattern, mixed spacing)");
+  console.log("  - あの頃の青い星(1-4) (title ending number pattern)");
   console.log("  - 単独の本 (unchanged)");
 
-  console.log(`\n✅ Actual result: ${result.length} entries (expected ~10)`);
+  console.log(`\n✅ Actual result: ${result.length} entries (expected ~12)`);
 
   if (window.kbMerged) {
     window.showMerged();

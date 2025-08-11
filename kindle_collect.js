@@ -320,6 +320,59 @@ window.sequelPatterns = {
       return null;
     },
   },
+
+  // Pattern 6: Space + number format (Title1, Title 2, Title　3)
+  spaceNumber: {
+    regex: /^(.+?)[\s　]?([\d０-９]+)\s+\((.*)$/,
+    extract: function (title) {
+      const match = title.match(this.regex);
+      if (match) {
+        const volumeInfo = window.convertToHalfWidthNumber(match[2]);
+
+        return {
+          baseTitle: match[1].trim(),
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
+          suffix: `(${match[3]}`,
+          type: "spaceNumber",
+        };
+      }
+      return null;
+    },
+  },
+
+  // Pattern 7: Title ending with number (Title1, Title2)
+  titleEndingNumber: {
+    regex: /^(.+?)([０-９\d]+)$/,
+    extract: function (title) {
+      // Avoid conflicts with other patterns - check if title contains specific markers
+      if (title.includes('巻') || title.includes('話') || title.includes('集') || 
+          title.includes('(') || title.includes('（') || title.includes('上') || 
+          title.includes('下') || title.includes('【') || title.includes('第')) {
+        return null; // Let other patterns handle these
+      }
+
+      const match = title.match(this.regex);
+      if (match) {
+        const baseTitle = match[1].trim();
+        // Make sure baseTitle is not empty and doesn't end with a digit
+        if (!baseTitle || /[０-９\d]$/.test(baseTitle)) {
+          return null;
+        }
+
+        const volumeInfo = window.convertToHalfWidthNumber(match[2]);
+
+        return {
+          baseTitle: baseTitle,
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
+          suffix: '',
+          type: "titleEndingNumber",
+        };
+      }
+      return null;
+    },
+  },
 };
 
 // Function to detect and extract sequel information from a title
@@ -416,6 +469,10 @@ window.formatVolumeRange = function (volumes, type) {
         return `第${min}-${max}集`;
       case "volumeKan":
         return `(${min}-${max})巻`;
+      case "spaceNumber":
+        return `(${min}-${max})`;
+      case "titleEndingNumber":
+        return `(${min}-${max})`;
       default:
         return `(${min}-${max})`;
     }
@@ -431,6 +488,10 @@ window.formatVolumeRange = function (volumes, type) {
         return `第${volumeTexts}集`;
       case "volumeKan":
         return `(${volumeTexts})巻`;
+      case "spaceNumber":
+        return `(${volumeTexts})`;
+      case "titleEndingNumber":
+        return `(${volumeTexts})`;
       default:
         return `(${volumeTexts})`;
     }
