@@ -25,8 +25,8 @@ coverage
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 
 # Bower dependency directory (https://bower.io/)
 bower_components
@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 .claude/settings.local.json
 .mcp.json
+
+output.csv
