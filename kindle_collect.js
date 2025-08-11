@@ -346,9 +346,17 @@ window.sequelPatterns = {
     regex: /^(.+?)([０-９\d]+)$/,
     extract: function (title) {
       // Avoid conflicts with other patterns - check if title contains specific markers
-      if (title.includes('巻') || title.includes('話') || title.includes('集') || 
-          title.includes('(') || title.includes('（') || title.includes('上') || 
-          title.includes('下') || title.includes('【') || title.includes('第')) {
+      if (
+        title.includes("巻") ||
+        title.includes("話") ||
+        title.includes("集") ||
+        title.includes("(") ||
+        title.includes("（") ||
+        title.includes("上") ||
+        title.includes("下") ||
+        title.includes("【") ||
+        title.includes("第")
+      ) {
         return null; // Let other patterns handle these
       }
 
@@ -366,7 +374,7 @@ window.sequelPatterns = {
           baseTitle: baseTitle,
           volume: volumeInfo.value,
           volumeText: volumeInfo.normalizedText,
-          suffix: '',
+          suffix: "",
           type: "titleEndingNumber",
         };
       }
@@ -387,6 +395,23 @@ window.extractSequelInfo = function (title) {
   return null; // No sequel pattern detected
 };
 
+// Helper function to normalize author names for better grouping
+window.normalizeAuthor = function (author) {
+  if (!author) return "";
+
+  // Remove extra spaces and common separators
+  let normalized = author.trim();
+
+  // Handle cases like "がちょん次郎， 六代目" -> "がちょん次郎"
+  // Extract the main author before common separators
+  const mainAuthorMatch = normalized.match(/^([^，,、]+)/);
+  if (mainAuthorMatch) {
+    return mainAuthorMatch[1].trim();
+  }
+
+  return normalized;
+};
+
 // Function to group books by series (author + base title)
 window.groupBooksBySeries = function (books) {
   const series = {};
@@ -396,17 +421,27 @@ window.groupBooksBySeries = function (books) {
     const sequelInfo = window.extractSequelInfo(book.title);
 
     if (sequelInfo) {
-      // This is part of a series
-      const seriesKey = `${book.author}::${sequelInfo.baseTitle}::${sequelInfo.type}`;
+      // This is part of a series - use pattern-agnostic key
+      const normalizedAuthor = window.normalizeAuthor(book.author);
+      const seriesKey = `${normalizedAuthor}::${sequelInfo.baseTitle}`;
 
       if (!series[seriesKey]) {
         series[seriesKey] = {
-          author: book.author,
+          author: book.author, // Keep original author for first entry
+          normalizedAuthor: normalizedAuthor,
           baseTitle: sequelInfo.baseTitle,
-          type: sequelInfo.type,
+          types: new Set([sequelInfo.type]), // Track all pattern types used
           volumes: [],
           suffix: sequelInfo.suffix, // Keep suffix from first volume
         };
+      } else {
+        // Add this pattern type to the set
+        series[seriesKey].types.add(sequelInfo.type);
+
+        // Update author if the new one is more complete
+        if (book.author.length > series[seriesKey].author.length) {
+          series[seriesKey].author = book.author;
+        }
       }
 
       series[seriesKey].volumes.push({
@@ -414,6 +449,7 @@ window.groupBooksBySeries = function (books) {
         volumeText: sequelInfo.volumeText || sequelInfo.volume.toString(),
         originalTitle: book.title,
         format: book.format,
+        patternType: sequelInfo.type,
       });
     } else {
       // Standalone book
@@ -421,9 +457,18 @@ window.groupBooksBySeries = function (books) {
     }
   });
 
-  // Sort volumes within each series
+  // Sort volumes within each series and detect mixed patterns
   Object.values(series).forEach((serie) => {
     serie.volumes.sort((a, b) => a.volume - b.volume);
+
+    // Log series with mixed pattern types for debugging
+    if (serie.types.size > 1) {
+      console.log(
+        `🔗 Mixed patterns detected for "${serie.baseTitle}" by ${
+          serie.author
+        }: ${Array.from(serie.types).join(", ")}`
+      );
+    }
   });
 
   return { series, standalone };
@@ -514,10 +559,22 @@ window.mergeSequels = function () {
   Object.values(series).forEach((serie) => {
     if (serie.volumes.length > 1) {
       // Multiple volumes - merge them
-      const volumeRange = window.formatVolumeRange(serie.volumes, serie.type);
+      // For mixed pattern types, use the most common pattern for formatting
+      const patternCounts = {};
+      serie.volumes.forEach((vol) => {
+        patternCounts[vol.patternType] =
+          (patternCounts[vol.patternType] || 0) + 1;
+      });
+
+      // Find the most common pattern type
+      const dominantType = Object.keys(patternCounts).reduce((a, b) =>
+        patternCounts[a] > patternCounts[b] ? a : b
+      );
+
+      const volumeRange = window.formatVolumeRange(serie.volumes, dominantType);
       let mergedTitle;
 
-      if (serie.type === "upperLower" && volumeRange === "(上・下)") {
+      if (dominantType === "upperLower" && volumeRange === "(上・下)") {
         mergedTitle = `${serie.baseTitle}${volumeRange}`;
       } else {
         mergedTitle = `${serie.baseTitle}${volumeRange}`;
@@ -533,10 +590,16 @@ window.mergeSequels = function () {
         format: serie.volumes[0].format,
         volumeCount: serie.volumes.length,
         originalTitles: serie.volumes.map((v) => v.originalTitle),
+        mixedPatterns: serie.types.size > 1,
+        patternTypes: Array.from(serie.types),
       });
 
+      const patternInfo =
+        serie.types.size > 1
+          ? ` [Mixed: ${Array.from(serie.types).join(",")}]`
+          : "";
       console.log(
-        `📚 Merged: ${serie.baseTitle} (${serie.volumes.length} volumes) -> ${mergedTitle}`
+        `📚 Merged: ${serie.baseTitle} (${serie.volumes.length} volumes)${patternInfo} -> ${mergedTitle}`
       );
     } else {
       // Single volume series (shouldn't happen, but handle gracefully)
@@ -562,6 +625,7 @@ window.mergeSequels = function () {
 📊 Merged: ${mergedBooks.length} entries
 📊 Series merged: ${Object.keys(series).length}
 📊 Standalone books: ${standalone.length}
+🔗 Mixed pattern series: ${mergedBooks.filter((b) => b.mixedPatterns).length}
 💾 Use downloadMergedCSV() to download merged CSV`);
 
   return mergedBooks;
@@ -693,5 +757,6 @@ ${"=".repeat(50)}
 📋 Copy to clipboard: copyCSV()
 ➡️ Navigate to next page: nextPage()
 🔗 Merge sequels: mergeSequels()
+🧪 Test sequel fix: testSequelFix()
 ${"=".repeat(50)}`);
 }
