@@ -128,47 +128,44 @@ window.initializeKindleCollector = function () {
   };
 
   window.showResults = function () {
-    console.log("\n" + "🎉".repeat(20));
-    console.log(`📚 Collection complete! Total books: ${window.kb.length}`);
-    console.log("💾 Use downloadCSV() or copyCSV() to export data");
-    console.log("🔗 Use mergeSequels() to combine sequel series");
-    console.log("🎉".repeat(20));
+    console.log(`
+  ${"🎉".repeat(20)}
+  📚 Collection complete! Total books: ${window.kb.length}
+  💾 Use downloadCSV() or copyCSV() to export data
+  🔗 Use mergeSequels() to combine sequel series
+  ${"🎉".repeat(20)}`);
   };
 
   // Help function to show all available commands
   window.help = function () {
-    console.log("🚀 Kindle Book Collector - Available Commands:");
-    console.log("\n📚 Collection Commands:");
-    console.log("📖 collectBooks()       - Collect books from current page");
-    console.log("🤖 collectAllPages()    - Auto-collect from all pages");
-    console.log(
-      "🔗 collectAllPages({mergeSequels: true}) - Auto-collect and merge"
-    );
-    console.log("📊 showResults()        - Show collection summary");
+    console.log(`🚀 Kindle Book Collector - Available Commands:
 
-    console.log("\n🧭 Navigation Commands:");
-    console.log("➡️ nextPage()           - Navigate to next page");
+  📚 Collection Commands:
+  📖 collectBooks()       - Collect books from current page
+  🤖 collectAllPages()    - Auto-collect from all pages
+  🔗 collectAllPages({mergeSequels: true}) - Auto-collect and merge
+  📊 showResults()        - Show collection summary
 
-    console.log("\n📝 Sequel Merging Commands:");
-    console.log("🔗 mergeSequels()       - Merge sequel series into ranges");
-    console.log("📚 showMerged()         - Show merged collection summary");
+  🧭 Navigation Commands:
+  ➡️ nextPage()           - Navigate to next page
 
-    console.log("\n💾 Export Commands:");
-    console.log("💾 downloadCSV()        - Download original CSV file");
-    console.log("📁 exportMerged()       - Download merged CSV file");
-    console.log("📋 copyCSV()            - Copy original CSV to clipboard");
-    console.log("📋 copyMergedCSV()      - Copy merged CSV to clipboard");
-    console.log("📄 toCSV()              - Get original CSV data as string");
-    console.log("📄 toMergedCSV()        - Get merged CSV data as string");
+  📝 Sequel Merging Commands:
+  🔗 mergeSequels()       - Merge sequel series into ranges
+  📚 showMerged()         - Show merged collection summary
 
-    console.log("\n🔧 Utility Commands:");
-    console.log("❓ help()               - Show this help message");
-    console.log("🔄 initializeKindleCollector() - Re-initialize if needed");
-    console.log("🧪 testSequelMerging()  - Test merging with sample data");
+  💾 Export Commands:
+  💾 downloadCSV()        - Download original CSV file
+  📁 downloadMergedCSV()  - Download merged CSV file
+  📋 copyCSV()            - Copy original CSV to clipboard
+  📋 copyMergedCSV()      - Copy merged CSV to clipboard
+  📄 toCSV()              - Get original CSV data as string
+  📄 toMergedCSV()        - Get merged CSV data as string
 
-    console.log(
-      `\n📊 Current Status: ${window.kb ? window.kb.length : 0} books collected`
-    );
+  🔧 Utility Commands:
+  ❓ help()               - Show this help message
+  🔄 initializeKindleCollector() - Re-initialize if needed
+
+  📊 Current Status: ${window.kb ? window.kb.length : 0} books collected`);
     if (window.kbMerged) {
       console.log(
         `📊 Merged Status: ${window.kbMerged.length} entries available`
@@ -185,6 +182,45 @@ if (!window.kb) {
   window.initializeKindleCollector();
 }
 
+// Helper function to convert full-width digits and Japanese numerals to Arabic numerals
+window.convertToHalfWidthNumber = function (text) {
+  // Handle mixed text that might contain full-width digits, Japanese numerals, or ASCII digits
+  let numericText = text;
+
+  // Convert full-width digits (０-９) to ASCII digits (0-9)
+  numericText = numericText.replace(/[０-９]/g, (char) =>
+    String.fromCharCode(char.charCodeAt(0) - 0xff10 + 0x30)
+  );
+
+  // Handle Japanese numerals
+  const japaneseNumerals = {
+    一: "1",
+    二: "2",
+    三: "3",
+    四: "4",
+    五: "5",
+    六: "6",
+    七: "7",
+    八: "8",
+    九: "9",
+    十: "10",
+  };
+
+  // If it's a single Japanese numeral, convert it
+  if (japaneseNumerals[numericText]) {
+    numericText = japaneseNumerals[numericText];
+  }
+
+  // Parse as integer
+  const result = parseInt(numericText);
+
+  return {
+    value: result,
+    originalText: text,
+    normalizedText: result.toString(),
+  };
+};
+
 // Sequel Pattern Recognition Functions
 window.sequelPatterns = {
   // Pattern 1: Numbered volumes in parentheses (1), (2), （１）, （２）, etc.
@@ -193,25 +229,12 @@ window.sequelPatterns = {
     extract: function (title) {
       const match = title.match(this.regex);
       if (match) {
-        const volumeText = match[2];
-        let volume;
-        
-        // Convert full-width digits to half-width if needed
-        if (/^[\d]+$/.test(volumeText)) {
-          // Already ASCII digits
-          volume = parseInt(volumeText);
-        } else {
-          // Convert full-width to half-width digits
-          const halfWidthDigits = volumeText.replace(/[０-９]/g, char => 
-            String.fromCharCode(char.charCodeAt(0) - 0xFF10 + 0x30)
-          );
-          volume = parseInt(halfWidthDigits);
-        }
-        
+        const volumeInfo = window.convertToHalfWidthNumber(match[2]);
+
         return {
           baseTitle: match[1].trim(),
-          volume: volume,
-          volumeText: volume.toString(), // Always store as half-width for consistency
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
           suffix: match[3].trim(),
           type: "numbered",
         };
@@ -240,13 +263,16 @@ window.sequelPatterns = {
 
   // Pattern 3: Chapter format 【第X話】
   chapterFormat: {
-    regex: /^(.+?)【第(\d+)話】(.*)$/,
+    regex: /^(.+?)【第([\d０-９]+)話】(.*)$/,
     extract: function (title) {
       const match = title.match(this.regex);
       if (match) {
+        const volumeInfo = window.convertToHalfWidthNumber(match[2]);
+
         return {
           baseTitle: match[1].trim(),
-          volume: parseInt(match[2]),
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
           suffix: match[3].trim(),
           type: "chapter",
         };
@@ -257,39 +283,16 @@ window.sequelPatterns = {
 
   // Pattern 4: Collection format 第X集
   collectionFormat: {
-    regex: /^(.+?)第([一二三四五六七八九十\d]+)集(.*)$/,
+    regex: /^(.+?)第?([一二三四五六七八九十\d０-９]+)集(.*)$/,
     extract: function (title) {
       const match = title.match(this.regex);
       if (match) {
-        const volumeText = match[2];
-        let volume;
-
-        // Convert Japanese numerals to numbers
-        const japaneseNumerals = {
-          一: 1,
-          二: 2,
-          三: 3,
-          四: 4,
-          五: 5,
-          六: 6,
-          七: 7,
-          八: 8,
-          九: 9,
-          十: 10,
-        };
-
-        if (/^\d+$/.test(volumeText)) {
-          volume = parseInt(volumeText);
-        } else if (japaneseNumerals[volumeText]) {
-          volume = japaneseNumerals[volumeText];
-        } else {
-          volume = 1; // Default fallback
-        }
+        const volumeInfo = window.convertToHalfWidthNumber(match[2]);
 
         return {
           baseTitle: match[1].trim(),
-          volume: volume,
-          volumeText: volumeText,
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
           suffix: match[3].trim(),
           type: "collection",
         };
@@ -300,14 +303,16 @@ window.sequelPatterns = {
 
   // Pattern 5: Volume format N巻
   volumeKan: {
-    regex: /^(.+?)(\d+)巻(.*)$/,
+    regex: /^(.+?)([\d０-９]+)巻(.*)$/,
     extract: function (title) {
       const match = title.match(this.regex);
       if (match) {
+        const volumeInfo = window.convertToHalfWidthNumber(match[2]);
+
         return {
           baseTitle: match[1].trim(),
-          volume: parseInt(match[2]),
-          volumeText: match[2],
+          volume: volumeInfo.value,
+          volumeText: volumeInfo.normalizedText,
           suffix: match[3].trim(),
           type: "volumeKan",
         };
@@ -491,12 +496,12 @@ window.mergeSequels = function () {
   // Store merged data
   window.kbMerged = mergedBooks;
 
-  console.log(`✅ Merge complete!`);
-  console.log(`📊 Original: ${window.kb.length} books`);
-  console.log(`📊 Merged: ${mergedBooks.length} entries`);
-  console.log(`📊 Series merged: ${Object.keys(series).length}`);
-  console.log(`📊 Standalone books: ${standalone.length}`);
-  console.log(`💾 Use exportMerged() to download merged CSV`);
+  console.log(`✅ Merge complete!
+📊 Original: ${window.kb.length} books
+📊 Merged: ${mergedBooks.length} entries
+📊 Series merged: ${Object.keys(series).length}
+📊 Standalone books: ${standalone.length}
+💾 Use downloadMergedCSV() to download merged CSV`);
 
   return mergedBooks;
 };
@@ -539,7 +544,7 @@ window.showMerged = function () {
   }
 
   console.log(`\n💾 Export options:`);
-  console.log(`📁 Download merged CSV: exportMerged()`);
+  console.log(`📁 Download merged CSV: downloadMergedCSV()`);
   console.log(`📋 Copy merged CSV: copyMergedCSV()`);
 };
 
@@ -557,7 +562,7 @@ window.toMergedCSV = function () {
   return header + rows;
 };
 
-window.exportMerged = function () {
+window.downloadMergedCSV = function () {
   const csv = window.toMergedCSV();
   if (!csv) return;
 
@@ -618,174 +623,14 @@ window.copyCSV = async function () {
   }
 };
 
-// Test function for sequel merging
-window.testSequelMerging = function () {
-  console.log("🧪 Testing sequel merging with sample data...");
-
-  // Sample test data based on output.csv patterns
-  const testBooks = [
-    {
-      title: "プランダラ(1) (角川コミックス・エース)",
-      author: "水無月 すう",
-      format: "Kindle",
-    },
-    {
-      title: "プランダラ(2) (角川コミックス・エース)",
-      author: "水無月 すう",
-      format: "Kindle",
-    },
-    {
-      title: "プランダラ(3) (角川コミックス・エース)",
-      author: "水無月 すう",
-      format: "Kindle",
-    },
-    {
-      title: "プランダラ(21) (角川コミックス・エース)",
-      author: "水無月 すう",
-      format: "Kindle",
-    },
-    {
-      title: "NEXUS 情報の人類史 上　人間のネットワーク",
-      author: "ユヴァル・ノア・ハラリ",
-      format: "Kindle",
-    },
-    {
-      title: "NEXUS 情報の人類史 下　AI革命",
-      author: "ユヴァル・ノア・ハラリ",
-      format: "Kindle",
-    },
-    { title: "あずまんが大王(1)", author: "あずまきよひこ", format: "Kindle" },
-    { title: "あずまんが大王(2)", author: "あずまきよひこ", format: "Kindle" },
-    { title: "あずまんが大王(3)", author: "あずまきよひこ", format: "Kindle" },
-    { title: "あずまんが大王(4)", author: "あずまきよひこ", format: "Kindle" },
-    {
-      title: "不浄を拭うひと（分冊版） 【第1話】 (本当にあった笑える話)",
-      author: "沖田×華",
-      format: "Kindle",
-    },
-    {
-      title: "不浄を拭うひと（分冊版） 【第2話】 (本当にあった笑える話)",
-      author: "沖田×華",
-      format: "Kindle",
-    },
-    {
-      title: "不浄を拭うひと（分冊版） 【第3話】 (本当にあった笑える話)",
-      author: "沖田×華",
-      format: "Kindle",
-    },
-    {
-      title: "第一集: 「いなげやの話 他」 川尻こだまのただれた生活",
-      author: "川尻こだま",
-      format: "Kindle",
-    },
-    {
-      title: "第2集: 「町中華の話 他」 川尻こだまのただれた生活",
-      author: "川尻こだま",
-      format: "Kindle",
-    },
-    {
-      title: "第三集: 『仮眠ライフハックの話 他』 川尻こだまのただれた生活",
-      author: "川尻こだま",
-      format: "Kindle",
-    },
-    { title: "単独の本", author: "テスト作者", format: "Kindle" },
-    {
-      title: "Get Backers 奪還屋【極！単行本シリーズ】9巻",
-      author: "青樹佑夜， 綾峰欄人",
-      format: "Kindle",
-    },
-    {
-      title: "Get Backers 奪還屋【極！単行本シリーズ】13巻",
-      author: "青樹佑夜， 綾峰欄人",
-      format: "Kindle",
-    },
-    {
-      title: "Get Backers 奪還屋【極！単行本シリーズ】29巻",
-      author: "青樹佑夜， 綾峰欄人",
-      format: "Kindle",
-    },
-    {
-      title: "Get Backers 奪還屋【極！単行本シリーズ】8巻",
-      author: "青樹佑夜， 綾峰欄人",
-      format: "Kindle",
-    },
-    {
-      title: "Get Backers 奪還屋【極！単行本シリーズ】33巻",
-      author: "青樹佑夜， 綾峰欄人",
-      format: "Kindle",
-    },
-    {
-      title: "Get Backers 奪還屋【極！単行本シリーズ】23巻",
-      author: "青樹佑夜， 綾峰欄人",
-      format: "Kindle",
-    },
-    {
-      title: "ヘテロゲニア　リンギスティコ　～異種族言語学入門～　（６） (角川コミックス・エース)",
-      author: "瀬野 反人",
-      format: "Kindle",
-    },
-    {
-      title: "ヘテロゲニア　リンギスティコ　～異種族言語学入門～　（５） (角川コミックス・エース)",
-      author: "瀬野 反人",
-      format: "Kindle",
-    },
-    {
-      title: "ヘテロゲニア　リンギスティコ　～異種族言語学入門～　（４） (角川コミックス・エース)",
-      author: "瀬野 反人",
-      format: "Kindle",
-    },
-    {
-      title: "マテリアル・パズル～神無き世界の魔法使い～（１０） (モーニングコミックス)",
-      author: "土塚理弘",
-      format: "Kindle",
-    },
-    {
-      title: "マテリアル・パズル～神無き世界の魔法使い～（９） (モーニングコミックス)",
-      author: "土塚理弘",
-      format: "Kindle",
-    },
-  ];
-
-  // Backup current data if it exists
-  const originalKb = window.kb;
-  window.kb = testBooks;
-
-  console.log(`📚 Loaded ${testBooks.length} test books`);
-
-  // Test the merging
-  const result = window.mergeSequels();
-
-  console.log("\n🧪 Test Results:");
-  console.log("Expected merges:");
-  console.log("  - プランダラ(1,2,3,21) (non-consecutive, half-width)");
-  console.log("  - NEXUS 情報の人類史(上・下)");
-  console.log("  - あずまんが大王(1-4) (consecutive, half-width)");
-  console.log("  - 不浄を拭うひと（分冊版） 【第1-3話】");
-  console.log("  - 川尻こだまのただれた生活 第1-3集");
-  console.log("  - Get Backers 奪還屋【極！単行本シリーズ】(8,9,13,23,29,33)巻");
-  console.log("  - ヘテロゲニア　リンギスティコ　～異種族言語学入門～　（4-6） (full-width)");
-  console.log("  - マテリアル・パズル～神無き世界の魔法使い～（9,10） (full-width)");
-  console.log("  - 単独の本 (unchanged)");
-
-  console.log(`\n✅ Actual result: ${result.length} entries (expected ~9)`);
-
-  if (window.kbMerged) {
-    window.showMerged();
-  }
-
-  // Restore original data
-  window.kb = originalKb;
-
-  console.log("\n🧪 Test complete! Original data restored.");
-};
-
 // Show export options
 if (window.kb.length > 0) {
-  console.log("\n" + "=".repeat(50));
-  console.log(`📚 ${window.kb.length} books collected. Export options:`);
-  console.log("💾 Download file: downloadCSV()");
-  console.log("📋 Copy to clipboard: copyCSV()");
-  console.log("➡️ Navigate to next page: nextPage()");
-  console.log("🧪 Test sequel merging: testSequelMerging()");
-  console.log("=".repeat(50));
+  console.log(`
+${"=".repeat(50)}
+📚 ${window.kb.length} books collected. Export options:
+💾 Download file: downloadCSV()
+📋 Copy to clipboard: copyCSV()
+➡️ Navigate to next page: nextPage()
+🔗 Merge sequels: mergeSequels()
+${"=".repeat(50)}`);
 }

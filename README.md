@@ -8,7 +8,9 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
 
 - **📖 Smart Book Collection**: Automatically extracts book titles and authors from Kindle library pages
 - **🤖 Multi-Page Automation**: Seamlessly navigates through all pages of your library
-- **💾 Multiple Export Options**: Download CSV files or copy data to clipboard
+- **🔗 Sequel Series Merging**: Automatically merges sequel series (e.g., `Volume(1)`, `Volume(2)` → `Volume(1-2)`)
+- **🌏 Full-Width Character Support**: Handles both ASCII and full-width digits/brackets
+- **💾 Multiple Export Options**: Download CSV files or copy data to clipboard for both original and merged data
 - **🔄 Real-Time Progress**: Live console feedback with collection status and progress
 - **🎯 Robust Selectors**: Uses reliable DOM selectors that work with current Kindle library interface
 - **⚡ Browser Console Interface**: Simple commands for easy operation
@@ -40,6 +42,9 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
    // For automated collection of all pages
    collectAllPages()
    
+   // For automated collection with sequel merging
+   collectAllPages({mergeSequels: true})
+   
    // Or collect manually page by page
    collectBooks()  // Collect current page
    nextPage()      // Navigate to next page
@@ -53,6 +58,7 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
 |---------|-------------|
 | `collectBooks()` | Collect books from the current page |
 | `collectAllPages()` | Automatically collect from all pages |
+| `collectAllPages({mergeSequels: true})` | Auto-collect all pages and merge sequels |
 | `showResults()` | Display collection summary |
 
 ### Navigation Commands
@@ -61,13 +67,23 @@ A powerful browser-based JavaScript tool for collecting and exporting your compl
 |---------|-------------|
 | `nextPage()` | Navigate to the next page manually |
 
+### Sequel Merging Commands
+
+| Command | Description |
+|---------|-------------|
+| `mergeSequels()` | Merge sequel series into volume ranges |
+| `showMerged()` | Show merged collection summary |
+
 ### Export Commands
 
 | Command | Description |
 |---------|-------------|
-| `downloadCSV()` | Download collected data as CSV file |
-| `copyCSV()` | Copy CSV data to clipboard |
-| `toCSV()` | Get CSV data as string |
+| `downloadCSV()` | Download original collected data as CSV file |
+| `downloadMergedCSV()` | Download merged collection as CSV file |
+| `copyCSV()` | Copy original CSV data to clipboard |
+| `copyMergedCSV()` | Copy merged CSV data to clipboard |
+| `toCSV()` | Get original CSV data as string |
+| `toMergedCSV()` | Get merged CSV data as string |
 
 ### Utility Commands
 
@@ -84,20 +100,44 @@ The exported data includes:
 
 - **Title**: Book title (commas replaced with full-width commas for CSV compatibility)
 - **Author**: Author name (commas replaced with full-width commas for CSV compatibility)
+- **Format**: Always "Kindle"
+
+### Sequel Merging
+
+The tool automatically detects and merges sequel series:
+
+**Supported Patterns:**
+- **Numbered volumes**: `Title(1)`, `Title(2)` → `Title(1-2)` or `Title(1,3,5)` for non-consecutive
+- **Full-width brackets**: `Title（１）`, `Title（２）` → `Title（1-2）`
+- **Volume format**: `Title9巻`, `Title13巻` → `Title(9,13)巻`
+- **Chapter format**: `Title【第1話】`, `Title【第2話】` → `Title【第1-2話】`
+- **Collection format**: `Title第一集`, `Title第二集` → `Title第1-2集`
+- **Upper/Lower**: `Title上`, `Title下` → `Title(上・下)`
 
 ### Export Methods
 
-**Download File**:
+**Download Original Data**:
 ```javascript
 downloadCSV()
 ```
 
 - Creates a file named `kindle_books_YYYY-MM-DD.csv`
+- Downloads original collected data
 - Automatically downloads to your default download folder
+
+**Download Merged Data**:
+```javascript
+downloadMergedCSV()
+```
+
+- Creates a file named `kindle_books_merged_YYYY-MM-DD.csv`
+- Downloads data with sequel series merged
+- Significantly reduces duplicate entries
 
 **Copy to Clipboard**:
 ```javascript
-copyCSV()
+copyCSV()         // Copy original data
+copyMergedCSV()   // Copy merged data
 ```
 
 - Copies CSV data directly to clipboard
@@ -129,7 +169,18 @@ The script uses DOM selectors to identify book entries on Kindle library pages:
    🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉
    📚 Collection complete! Total books: 347
    💾 Use downloadCSV() or copyCSV() to export data
+   🔗 Use mergeSequels() to combine sequel series
    🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉
+   ```
+
+5. **Optional**: Merge sequel series
+   ```
+   🔄 Merging sequels from 347 books...
+   📚 Merged: プランダラ (21 volumes) -> プランダラ(1-21)
+   ✅ Merge complete!
+   📊 Original: 347 books
+   📊 Merged: 298 entries
+   💾 Use downloadMergedCSV() to download merged CSV
    ```
 
 ## 🛠️ Troubleshooting
