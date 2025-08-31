@@ -27,6 +27,10 @@ const CONFIG = {
   // Processing options
   PROCESS_ONLY_UNREAD: false,
   MARK_AS_READ: false,
+
+  // Spreadsheet settings
+  SPREADSHEET_ID: "TBC",
+  SHEET_ID: "TBC",
 };
 
 /**
@@ -128,11 +132,22 @@ function extractKindleBooksFromGmail() {
     // Generate CSV
     result.csv = exportAsCSV(uniqueBooks);
 
+    // Append to spreadsheet
+    Logger.log("\n📊 Appending books to Google Spreadsheet...");
+    const spreadsheetResult = appendToSpreadsheet(uniqueBooks);
+    result.spreadsheet = spreadsheetResult;
+
     // Calculate execution time
     result.summary.executionTime = `${(new Date() - startTime) / 1000}s`;
 
     result.success = true;
-    result.message = `Successfully extracted ${uniqueBooks.length} unique Kindle books`;
+    result.message = `Successfully extracted ${
+      uniqueBooks.length
+    } unique Kindle books${
+      spreadsheetResult.success
+        ? ` and added ${spreadsheetResult.booksAdded} to spreadsheet`
+        : ` (spreadsheet update failed: ${spreadsheetResult.error})`
+    }`;
 
     Logger.log(`\n✅ Extraction complete in ${result.summary.executionTime}`);
 
@@ -427,6 +442,39 @@ function removeDuplicates(books) {
   }
 
   return uniqueBooks;
+}
+
+/**
+ * Append books to Google Spreadsheet
+ */
+function appendToSpreadsheet(books) {
+  if (!books || books.length === 0) {
+    Logger.log("📊 No books to append to spreadsheet");
+    return { success: true, booksAdded: 0 };
+  }
+
+  try {
+    Logger.log(`📊 Appending ${books.length} books to spreadsheet...`);
+
+    const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    const sheet = spreadsheet.getSheetById(CONFIG.SHEET_ID);
+
+    if (!sheet) {
+      throw new Error(`Sheet with ID ${CONFIG.SHEET_ID} not found`);
+    }
+
+    // Prepare data rows: [Title, Author, Format]
+    const rows = books.map((book) => [book.title, "To be update", "Kindle"]);
+
+    // Append to sheet
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 3).setValues(rows);
+
+    Logger.log(`✅ Successfully appended ${books.length} books to spreadsheet`);
+    return { success: true, booksAdded: books.length };
+  } catch (error) {
+    Logger.log(`❌ Error appending to spreadsheet: ${error.message}`);
+    return { success: false, error: error.message, booksAdded: 0 };
+  }
 }
 
 /**
