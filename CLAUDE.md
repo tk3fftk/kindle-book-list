@@ -9,32 +9,41 @@ This is a browser-based JavaScript tool for collecting and organizing Kindle lib
 ## Core Architecture
 
 ### Main Script (`kindle_collect.js`)
-- **Pattern-based sequel detection**: 7 different patterns for detecting sequel series (numbered volumes, upper/lower divisions, chapter formats, etc.)
+- **Pattern-based sequel detection**: 8 different patterns for detecting sequel series (numbered volumes, upper/lower divisions, chapter formats, etc.)
 - **Smart grouping system**: Groups books by normalized author + base title, handles mixed pattern types within same series
 - **Full-width character support**: Converts full-width digits (０-９) and Japanese numerals to ASCII for consistent processing
 - **Browser automation**: Multi-page navigation and data collection via DOM selectors
 
 ### Key Components
 
-**Pattern Recognition Engine** (lines 225-388):
-- `sequelPatterns` object defines 7 distinct patterns for sequel detection
+**Pattern Recognition Engine** (lines 225-404):
+- `sequelPatterns` object defines 8 distinct patterns for sequel detection
 - Each pattern has regex and extract function for processing titles
-- Patterns include: numbered volumes, upper/lower (上/下), chapters (【第X話】), collections (第X集), volume format (X巻), space+number, title ending number
+- Patterns include: numbered volumes, upper/lower (上/下), chapters (【第X話】), collections (第X集), volume format (X巻), space+number, title ending number, prefix collection (1集 Title)
 
-**Series Grouping Logic** (lines 408-467):
+**Sequel Extraction** (lines 407-416):
+- `extractSequelInfo()` analyzes titles and extracts sequel information using all patterns
+- Returns base title, volume number, pattern type, and additional metadata
+
+**Author Normalization** (lines 419-433):
 - `normalizeAuthor()` handles author variants (e.g., "がちょん次郎， 六代目" → "がちょん次郎")
+- Extracts main author before common separators for consistent grouping
+
+**Series Grouping Logic** (lines 436-495):
 - Pattern-agnostic series keys prevent splitting of mixed-format series
 - Tracks multiple pattern types per series with `Set` data structure
+- Updates author information to use the most complete variant
 
-**Volume Range Formatting** (lines 469-499):
+**Volume Range Formatting** (lines 498-568):
 - Smart consecutive vs non-consecutive range formatting
 - Pattern-specific output formatting (parentheses, brackets, suffixes)
 - Special handling for upper/lower divisions
+- Dominant pattern selection for mixed-pattern series
 
 ## Testing
 
 ### Test Suite (`kindle_collect_test.js`)
-- Comprehensive test data covering all 7 sequel patterns
+- Comprehensive test data covering all 8 sequel patterns
 - Tests mixed-width characters, non-consecutive volumes, author variants
 - `testSequelMerging()` function for validating merge logic
 - Backup/restore mechanism for testing with live data
