@@ -1,7 +1,7 @@
 /**
  * Kindle Book Extractor from Gmail
  * Extracts Kindle book titles from Amazon.co.jp order confirmation emails
- * It runs on Google Apps Script that relateds to Gmail and Google Sheets
+ * It runs on Google Apps Script that relates to Gmail and Google Sheets
  */
 
 /**
