@@ -142,3 +142,4 @@ vite.config.ts.timestamp-*
 .mcp.json
 
 output.csv
+.myenv

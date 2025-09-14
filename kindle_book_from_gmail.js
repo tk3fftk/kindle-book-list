@@ -37,6 +37,7 @@ const CONFIG = {
   FETCH_AUTHOR: false,
   LLM_API_URL: "TBC",
   LLM_API_KEY: "TBC",
+  LLM_MODEL: "TBC",
 };
 
 const llm_headers = {
@@ -45,12 +46,12 @@ const llm_headers = {
 };
 
 const llm_payload = {
-  model: "sonar",
+  model: CONFIG.LLM_MODEL,
   messages: [
     {
       role: "user",
       content:
-        "<booktitle></booktitle>の書籍の著者名を、カンマ区切りで列挙してください。\n出力形式: 著者名1, 著者名2, 著者名3",
+        "Instruction: Identify the authors of the following book and output them in the specified format.\nBook Title: <booktitle></booktitle>\nOutput Format (Strict, no source): author1, author2, author3..",
     },
   ],
 };
@@ -522,7 +523,10 @@ function appendToSpreadsheet(books) {
     }
 
     // Prepare data rows: [Title, Author, Format]
-    const rows = books.map((book) => [book.title, "To be update", "Kindle"]);
+    const rows = books.map((book) => {
+      const author = fetchAuthorFromLLM(book.title);
+      return [book.title, author, "Kindle"];
+    });
 
     // Append to sheet
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 3).setValues(rows);
