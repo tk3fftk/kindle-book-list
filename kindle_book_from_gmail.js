@@ -32,7 +32,64 @@ const CONFIG = {
   // Spreadsheet settings
   SPREADSHEET_ID: "TBC",
   SHEET_ID: "TBC",
+
+  // Obtain book author feature
+  FETCH_AUTHOR: false,
+  LLM_API_URL: "TBC",
+  LLM_API_KEY: "TBC",
 };
+
+const llm_headers = {
+  Authorization: `Bearer ${CONFIG.LLM_API_KEY}`,
+  "Content-Type": "application/json",
+};
+
+const llm_payload = {
+  model: "sonar",
+  messages: [
+    {
+      role: "user",
+      content:
+        "<booktitle></booktitle>の書籍の著者名を、カンマ区切りで列挙してください。\n出力形式: 著者名1, 著者名2, 著者名3",
+    },
+  ],
+};
+
+function fetchAuthorFromLLM(bookTitle) {
+  if (!CONFIG.FETCH_AUTHOR) {
+    return "To be update";
+  }
+
+  try {
+    const payload = JSON.parse(JSON.stringify(llm_payload));
+    payload.messages[0].content = payload.messages[0].content.replace(
+      "<booktitle></booktitle>",
+      `<booktitle>${bookTitle}</booktitle>`
+    );
+
+    const response = UrlFetchApp.fetch(CONFIG.LLM_API_URL, {
+      method: "post",
+      headers: llm_headers,
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+
+    if (response.getResponseCode() === 200) {
+      const json = JSON.parse(response.getContentText());
+      const author = json.choices[0].message.content.trim();
+      Logger.log(`🖋️ Fetched author: ${author}`);
+      return author;
+    } else {
+      Logger.log(
+        `⚠️ LLM API error: ${response.getResponseCode()} - ${response.getContentText()}`
+      );
+      return "To be update";
+    }
+  } catch (error) {
+    Logger.log(`⚠️ LLM fetch error: ${error.message}`);
+    return "To be update";
+  }
+}
 
 /**
  * Main function to extract Kindle books from Gmail
