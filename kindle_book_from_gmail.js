@@ -1,6 +1,7 @@
 /**
  * Kindle Book Extractor from Gmail
  * Extracts Kindle book titles from Amazon.co.jp order confirmation emails
+ * It runs on Google Apps Script that relates to Gmail and Google Sheets
  */
 
 /**
@@ -31,7 +32,65 @@ const CONFIG = {
   // Spreadsheet settings
   SPREADSHEET_ID: "TBC",
   SHEET_ID: "TBC",
+
+  // Obtain book author feature
+  FETCH_AUTHOR: false,
+  LLM_API_URL: "TBC",
+  LLM_API_KEY: "TBC",
+  LLM_MODEL: "TBC",
 };
+
+const llm_headers = {
+  Authorization: `Bearer ${CONFIG.LLM_API_KEY}`,
+  "Content-Type": "application/json",
+};
+
+const llm_payload = {
+  model: CONFIG.LLM_MODEL,
+  messages: [
+    {
+      role: "user",
+      content:
+        "Instruction: Identify the authors of the following book and output them in the specified format.\nBook Title: <booktitle></booktitle>\nOutput Format (Strict, no source): author1, author2, author3..",
+    },
+  ],
+};
+
+function fetchAuthorFromLLM(bookTitle) {
+  if (!CONFIG.FETCH_AUTHOR) {
+    return "To be update";
+  }
+
+  try {
+    const payload = JSON.parse(JSON.stringify(llm_payload));
+    payload.messages[0].content = payload.messages[0].content.replace(
+      "<booktitle></booktitle>",
+      `<booktitle>${bookTitle}</booktitle>`
+    );
+
+    const response = UrlFetchApp.fetch(CONFIG.LLM_API_URL, {
+      method: "post",
+      headers: llm_headers,
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+
+    if (response.getResponseCode() === 200) {
+      const json = JSON.parse(response.getContentText());
+      const author = json.choices[0].message.content.trim();
+      Logger.log(`🖋️ Fetched author: ${author}`);
+      return author;
+    } else {
+      Logger.log(
+        `⚠️ LLM API error: ${response.getResponseCode()} - ${response.getContentText()}`
+      );
+      return "To be update";
+    }
+  } catch (error) {
+    Logger.log(`⚠️ LLM fetch error: ${error.message}`);
+    return "To be update";
+  }
+}
 
 /**
  * Main function to extract Kindle books from Gmail
@@ -464,7 +523,10 @@ function appendToSpreadsheet(books) {
     }
 
     // Prepare data rows: [Title, Author, Format]
-    const rows = books.map((book) => [book.title, "To be update", "Kindle"]);
+    const rows = books.map((book) => {
+      const author = fetchAuthorFromLLM(book.title);
+      return [book.title, author, "Kindle"];
+    });
 
     // Append to sheet
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 3).setValues(rows);
