@@ -1,0 +1,16 @@
+{
+  "name": "kindle-book-list",
+  "version": "1.0.0",
+  "description": "Extract Kindle book list from Gmail and Sheets using Google Apps Script",
+  "scripts": {
+    "login": "clasp login",
+    "logout": "clasp logout",
+    "create": "clasp create --type standalone --title kindle_book_from_gmail",
+    "push": "clasp push",
+    "deploy": "clasp deploy",
+    "open": "clasp open"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.3.0"
+  }
+}
