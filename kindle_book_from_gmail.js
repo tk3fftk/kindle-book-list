@@ -20,6 +20,13 @@ function getFromScriptProperties(key) {
   return value;
 }
 
+function getFromScriptPropertiesOptional(key, defaultValue = "") {
+  const value = PropertiesService.getScriptProperties().getProperty(key);
+  return value !== null && value !== undefined && value !== ""
+    ? value
+    : defaultValue;
+}
+
 // Configuration
 const CONFIG = {
   // Search queries for Amazon emails
@@ -42,43 +49,145 @@ const CONFIG = {
   SHEET_ID: getFromScriptProperties("SHEET_ID"),
 
   // Obtain book author feature
-  FETCH_AUTHOR: getFromScriptProperties("FETCH_AUTHOR") === "true",
-  LLM_API_URL: getFromScriptProperties("LLM_API_URL"),
+  FETCH_AUTHOR:
+    getFromScriptPropertiesOptional("FETCH_AUTHOR", "true") === "true",
+  LLM_PROVIDER: getFromScriptPropertiesOptional("LLM_PROVIDER", "gemini"),
+  LLM_API_URL: getFromScriptPropertiesOptional("LLM_API_URL", ""),
   LLM_API_KEY: getFromScriptProperties("LLM_API_KEY"),
   LLM_MODEL: getFromScriptProperties("LLM_MODEL"),
 };
 
-const llm_headers = {
-  Authorization: `Bearer ${CONFIG.LLM_API_KEY}`,
-  "Content-Type": "application/json",
-};
+/**
+ * Clean book title by removing Kindle/publisher tags, volume numbers, and excess spaces
+ */
+function cleanBookTitle(rawTitle) {
+  if (!rawTitle) return "";
+  let title = rawTitle;
 
-const llm_payload = {
-  model: CONFIG.LLM_MODEL,
-  messages: [
-    {
-      role: "user",
-      content:
-        "Instruction: Identify the authors of the following book and output them in the specified format.\nBook Title: <booktitle></booktitle>\nOutput Format (Strict, no source): author1, author2, author3..",
-    },
-  ],
-};
+  // 1. Remove bracketed tags like 【リフロー型】, 【電子限定...】, [Kindle...]
+  title = title.replace(/[【\[][^】\]]*[】\]]/g, " ");
 
-function fetchAuthorFromLLM(bookTitle) {
-  if (!CONFIG.FETCH_AUTHOR) {
-    return "To be update";
+  // 2. Remove trailing label/format tags in parentheses, e.g., (角川コミックス・エース), (ジャンプコミックスDIGITAL), (Kindle版), （〇〇文庫）
+  title = title.replace(
+    /[\(（][^\)）]*(?:コミックス?|DIGITAL|digital|Kindle|版|文庫|単行本|新書|レーベル|マガジン|セレクション)[^\)）]*[\)）]/gi,
+    " "
+  );
+
+  // 3. Remove trailing volume numbers, e.g., （７）, (4), 4, 第3巻, 12巻
+  title = title.replace(/[\(（]\s*\d+\s*[\)）]\s*$/g, " ");
+  title = title.replace(/\s+第?\d+巻?\s*$/g, " ");
+
+  // 4. Normalize spaces
+  title = title.replace(/[\s\u3000]+/g, " ").trim();
+
+  return title || rawTitle.trim();
+}
+
+// Shared LLM prompt constants
+const AUTHOR_FALLBACK = "To be update";
+
+const LLM_SYSTEM_PROMPT =
+  "あなたは書籍情報の専門家です。与えられた書籍タイトルから、その正確な著者名（原著者・漫画家・編者）のみを特定して出力してください。\n" +
+  "- 余計な解説、挨拶、記号、マークダウン、出力フォーマットの説明は一切含めず、著者名のみを出力してください。\n" +
+  "- 複数著者の場合はカンマ区切り（例: 著者1, 著者2）で出力してください。\n" +
+  "- 確証が持てない場合や特定できない場合は、必ず「To be update」とだけ出力してください。";
+
+function buildUserPrompt(cleanedTitle) {
+  return `書籍タイトル: <booktitle>${cleanedTitle}</booktitle>\n著者名:`;
+}
+
+/**
+ * Fetch author using Gemini native REST API with Google Search Grounding
+ */
+function fetchAuthorFromGemini(cleanedTitle, rawTitle) {
+  try {
+    const apiUrl =
+      CONFIG.LLM_API_URL ||
+      `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.LLM_MODEL}:generateContent`;
+
+    const payload = {
+      contents: [
+        {
+          parts: [{ text: buildUserPrompt(cleanedTitle) }],
+        },
+      ],
+      systemInstruction: {
+        parts: [{ text: LLM_SYSTEM_PROMPT }],
+      },
+      tools: [{ google_search: {} }],
+      generationConfig: {
+        temperature: 0.0,
+      },
+    };
+
+    Logger.log(
+      `🔍 [Gemini Search] Fetching author for: "${cleanedTitle}" (Raw: "${rawTitle}")`
+    );
+
+    const response = UrlFetchApp.fetch(apiUrl, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": CONFIG.LLM_API_KEY,
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+
+    if (response.getResponseCode() === 200) {
+      const json = JSON.parse(response.getContentText());
+      if (
+        json.candidates &&
+        json.candidates[0] &&
+        json.candidates[0].content &&
+        json.candidates[0].content.parts &&
+        json.candidates[0].content.parts[0]
+      ) {
+        const author = json.candidates[0].content.parts[0].text.trim();
+        Logger.log(`🖋️ [Gemini] Fetched author: ${author}`);
+        return author;
+      }
+    }
+
+    Logger.log(
+      `⚠️ Gemini API error: ${response.getResponseCode()} - ${response.getContentText()}`
+    );
+    return AUTHOR_FALLBACK;
+  } catch (error) {
+    Logger.log(`⚠️ Gemini fetch error: ${error.message}`);
+    return AUTHOR_FALLBACK;
+  }
+}
+
+/**
+ * Fetch author using OpenAI-compatible API
+ */
+function fetchAuthorFromOpenAI(cleanedTitle, rawTitle) {
+  if (!CONFIG.LLM_API_URL) {
+    Logger.log("⚠️ LLM_API_URL is required when LLM_PROVIDER is 'openai'");
+    return AUTHOR_FALLBACK;
   }
 
   try {
-    const payload = JSON.parse(JSON.stringify(llm_payload));
-    payload.messages[0].content = payload.messages[0].content.replace(
-      "<booktitle></booktitle>",
-      `<booktitle>${bookTitle}</booktitle>`
+    const payload = {
+      model: CONFIG.LLM_MODEL,
+      temperature: 0.0,
+      messages: [
+        { role: "system", content: LLM_SYSTEM_PROMPT },
+        { role: "user", content: buildUserPrompt(cleanedTitle) },
+      ],
+    };
+
+    Logger.log(
+      `🔍 [OpenAI] Fetching author for: "${cleanedTitle}" (Raw: "${rawTitle}")`
     );
 
     const response = UrlFetchApp.fetch(CONFIG.LLM_API_URL, {
       method: "post",
-      headers: llm_headers,
+      headers: {
+        Authorization: `Bearer ${CONFIG.LLM_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true,
     });
@@ -86,17 +195,34 @@ function fetchAuthorFromLLM(bookTitle) {
     if (response.getResponseCode() === 200) {
       const json = JSON.parse(response.getContentText());
       const author = json.choices[0].message.content.trim();
-      Logger.log(`🖋️ Fetched author: ${author}`);
+      Logger.log(`🖋️ [OpenAI] Fetched author: ${author}`);
       return author;
     } else {
       Logger.log(
-        `⚠️ LLM API error: ${response.getResponseCode()} - ${response.getContentText()}`
+        `⚠️ OpenAI API error: ${response.getResponseCode()} - ${response.getContentText()}`
       );
-      return "To be update";
+      return AUTHOR_FALLBACK;
     }
   } catch (error) {
-    Logger.log(`⚠️ LLM fetch error: ${error.message}`);
-    return "To be update";
+    Logger.log(`⚠️ OpenAI fetch error: ${error.message}`);
+    return AUTHOR_FALLBACK;
+  }
+}
+
+/**
+ * Main dispatcher to fetch author from LLM (Gemini / OpenAI)
+ */
+function fetchAuthorFromLLM(bookTitle) {
+  if (!CONFIG.FETCH_AUTHOR) {
+    return AUTHOR_FALLBACK;
+  }
+
+  const cleanedTitle = cleanBookTitle(bookTitle);
+
+  if (CONFIG.LLM_PROVIDER === "openai") {
+    return fetchAuthorFromOpenAI(cleanedTitle, bookTitle);
+  } else {
+    return fetchAuthorFromGemini(cleanedTitle, bookTitle);
   }
 }
 
