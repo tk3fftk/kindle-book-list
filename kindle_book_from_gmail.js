@@ -12,6 +12,14 @@ function main() {
   return extractKindleBooksFromGmail();
 }
 
+function getFromScriptProperties(key) {
+  const value = PropertiesService.getScriptProperties().getProperty(key);
+  if (!value) {
+    throw new Error(`Missing configuration for key: ${key}`);
+  }
+  return value;
+}
+
 // Configuration
 const CONFIG = {
   // Search queries for Amazon emails
@@ -30,14 +38,14 @@ const CONFIG = {
   MARK_AS_READ: false,
 
   // Spreadsheet settings
-  SPREADSHEET_ID: "TBC",
-  SHEET_ID: "TBC",
+  SPREADSHEET_ID: getFromScriptProperties("SPREADSHEET_ID"),
+  SHEET_ID: getFromScriptProperties("SHEET_ID"),
 
   // Obtain book author feature
   FETCH_AUTHOR: false,
-  LLM_API_URL: "TBC",
-  LLM_API_KEY: "TBC",
-  LLM_MODEL: "TBC",
+  LLM_API_URL: getFromScriptProperties("LLM_API_URL"),
+  LLM_API_KEY: getFromScriptProperties("LLM_API_KEY"),
+  LLM_MODEL: getFromScriptProperties("LLM_MODEL"),
 };
 
 const llm_headers = {

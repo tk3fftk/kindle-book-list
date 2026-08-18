@@ -215,6 +215,21 @@ copyMergedCSV()   // 結合済みデータをコピー
 - ✅ Kindleライブラリページのみにアクセス
 - ✅ データはデバイス内に留まります
 
+## 🚀 Google Apps Script (kindle_book_from_gmail.js) のデプロイ
+
+Gmailの注文メールからKindle本を抽出してGoogleスプレッドシートに保存する `kindle_book_from_gmail.js` は、`clasp` を使ってローカルから Google Apps Script にデプロイできます。
+
+詳細な手順については [DEPLOYMENT_GAS.md](DEPLOYMENT_GAS.md) を参照してください。
+
+```bash
+# クイックコマンド一覧
+npm install          # パッケージのインストール
+npm run login        # clasp で Google 認証
+npm run create       # 新規 GAS プロジェクト作成（または .clasp.json を作成）
+npm run push         # コードのプッシュ (kindle_book_from_gmail.js のみ対象)
+npm run deploy       # デプロイの実行
+```
+
 ## 🤝 コントリビューション
 
 バグを発見したり、機能要求がありましたら、issueを開くかプルリクエストを送信してください。

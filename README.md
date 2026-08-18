@@ -229,6 +229,20 @@ This tool:
 - ✅ Only accesses your Kindle library page
 - ✅ Data stays on your device
 
+## 🚀 Deploying Google Apps Script (kindle_book_from_gmail.js)
+
+`kindle_book_from_gmail.js` extracts Kindle books from Gmail purchase receipts into Google Sheets. You can deploy it to Google Apps Script using `clasp`:
+
+See [DEPLOYMENT_GAS.md](DEPLOYMENT_GAS.md) for step-by-step instructions.
+
+```bash
+npm install          # Install dependencies
+npm run login        # Authenticate clasp with Google
+npm run create       # Create new GAS project (or set up .clasp.json)
+npm run push         # Push code (targets kindle_book_from_gmail.js only)
+npm run deploy       # Deploy version
+```
+
 ## 🤝 Contributing
 
 Found a bug or have a feature request? Please open an issue or submit a pull request.

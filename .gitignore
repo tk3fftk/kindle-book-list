@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 
 output.csv
 .myenv
+.clasp.json
+
