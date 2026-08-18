@@ -42,7 +42,7 @@ const CONFIG = {
   SHEET_ID: getFromScriptProperties("SHEET_ID"),
 
   // Obtain book author feature
-  FETCH_AUTHOR: false,
+  FETCH_AUTHOR: getFromScriptProperties("FETCH_AUTHOR") === "true",
   LLM_API_URL: getFromScriptProperties("LLM_API_URL"),
   LLM_API_KEY: getFromScriptProperties("LLM_API_KEY"),
   LLM_MODEL: getFromScriptProperties("LLM_MODEL"),
